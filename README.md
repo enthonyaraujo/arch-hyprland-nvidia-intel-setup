@@ -1,2 +1,88 @@
-# arch-hyprland-nvidia-intel-setup
-Hybrid GPU Setup on Arch Linux with Hyprland
+# Tutorial: Hybrid GPU Configuration (Intel and NVIDIA) on Arch Linux using Hyprland
+
+## Step 1: Install the necessary drivers
+
+### 1.1 Install Intel drivers
+
+For the Intel GPU, run:
+
+```bash
+sudo pacman -S mesa vulkan-intel libva-intel-driver intel-media-driver
+```
+
+### 1.2 Install NVIDIA drivers
+
+Follow the step-by-step guide on the Hyprland wiki:
+
+https://wiki.hyprland.org/Nvidia/
+
+## Step 2: GRUB Configuration to Support GPUs
+
+### 2.1 Edit the GRUB file `/etc/grub.d/40_custom`
+
+```bash
+sudo nano /etc/grub.d/40_custom
+```
+
+### 2.2 Add the following content, replacing the UUID with your root partition:
+
+```bash
+menuentry "Arch Linux - NVIDIA" {
+    search --fs-uuid --set=root <your_uuid>
+    linux /vmlinuz-linux root=UUID=<your_uuid> rw loglevel=3 quiet nvidia-drm.modeset=1
+    initrd /initramfs-linux.img
+}
+```
+
+To find the UUID of your system partitions on Linux, you can use the command:
+
+```bash
+lsblk -o NAME,FSTYPE,LABEL,UUID,MOUNTPOINTS
+```
+
+### 2.3 After step 2.2, run the command to make the configuration file executable:
+
+```bash
+sudo chmod +x /etc/grub.d/40_custom
+```
+
+### 2.4 Now, generate the new GRUB configuration:
+
+```bash
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+In GRUB, the option will appear:
+
+* Arch Linux - NVIDIA → To boot using your laptop's dedicated graphics card (to avoid lags and stutters on an external monitor — note: this helped me prevent external monitor stuttering when using Arch Linux with Hyprland)
+
+## Step 3: Verifying the Configuration
+
+After configuring, restart the system and check if everything is working correctly.
+
+Use the following command to check which GPU is being used:
+
+```bash
+glxinfo | grep "OpenGL renderer"
+```
+
+If the package is missing, install `mesa-utils` with:
+
+```bash
+sudo pacman -S mesa-utils
+```
+
+Example GRUB output:
+
+1. For NVIDIA: OpenGL renderer string: NVIDIA GeForce RTX 3050 ...
+2. For Intel: OpenGL renderer string: Mesa Intel(R) Graphics ...
+
+## Note
+
+If you want to use NVIDIA for heavy graphics applications while keeping Intel for light tasks, you can use PRIME Render Offload. To run an application with NVIDIA, use the following command:
+
+```bash
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia <app-name>
+```
+
+For more information, visit: https://wiki.archlinux.org/title/PRIME
